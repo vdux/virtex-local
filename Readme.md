@@ -9,6 +9,114 @@ A local state middleware for virtex components
 
     $ npm install virtex-local
 
+## Usage
+
+First, you need to install it in your redux middleware stack *before* [virtex-component](https://github.com/ashaffer/virtex-component).  E.g.
+
+`applyMiddleware(local, component, ...others)`
+
+### Local state
+
+If you want your component to have local state, you need to export a reducer and some actions.  You can do that like this:
+
+```javascript
+import {localAction} from 'virtex-local'
+
+const SET_TEXT = 'SET_TEXT'
+
+function render ({actions, state}) {
+  return (
+    <input type='text' onChange={setText} />
+    <span>
+      The text in your input is {state.text}
+    </span>
+  )
+}
+
+function reducer (state, action) {
+  switch (action.type) {
+    case SET_TEXT:
+      return {
+        ...state,
+        text: action.payload
+      }
+  }
+
+  return state
+}
+
+export default {
+  render,
+  reducer,
+  actions: {
+    setText: localAction(SET_TEXT)
+  }
+}
+```
+
+A curried copy of your local actions will be passed into your `props` as `actions`.  They will be passed into all of your lifecycle hooks, including render.
+
+### Refs
+
+Sometimes you want to be able to tell your child component's to do something.  You can call any of your children's actions by referencing them like this:
+
+```javascript
+function render ({link, refs}) {
+  const {input} = refs
+
+  return (
+    <TextInput ref={link('input')} />
+    <button onClick={() => input.clear()}>Clear Input</button>
+  )
+}
+```
+
+Where `TextInput` has:
+
+```javascript
+import {localAction} from 'virtex-local'
+
+const SET_TEXT = 'SET_TEXT'
+const CLEAR_TEXT = 'CLEAR_TEXT'
+
+function render ({actions, state}) {
+  return (
+    <input type='text' onChange={setText} />
+    <span>
+      The text in your input is {state.text}
+    </span>
+  )
+}
+
+function reducer (state, action) {
+  switch (action.type) {
+    case CLEAR_TEXT:
+      return {
+        ...state,
+        text: ''
+      }
+    case SET_TEXT:
+      return {
+        ...state,
+        text: action.payload
+      }
+  }
+
+  return state
+}
+
+export default {
+  render,
+  reducer,
+  actions: {
+    setText: localAction(SET_TEXT),
+    clear: localActions(CLEAR_TEXT)
+  }
+}
+```
+
+
+
 ## License
 
 The MIT License
