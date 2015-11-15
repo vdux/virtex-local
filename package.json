@@ -10,7 +10,9 @@
     "postpublish": "make clean"
   },
   "dependencies": {
+    "array-equal": "github:micro-js/array-equal",
     "get-prop": "github:micro-js/get-prop",
+    "object-equal": "github:micro-js/object-equal",
     "omap": "github:micro-js/omap",
     "redux-ephemeral": "^0.1.3"
   },

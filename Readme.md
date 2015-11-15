@@ -3,7 +3,7 @@
 
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://github.com/feross/standard)
 
-A local state middleware for virtex components
+A local state middleware for [virtex](https://github.com/ashaffer/virtex) [components](https://github.com/ashaffer/virtex-component)
 
 ## Installation
 
@@ -54,7 +54,7 @@ export default {
 }
 ```
 
-A curried copy of your local actions will be passed into your `props` as `actions`.  They will be passed into all of your lifecycle hooks, including render.
+A curried copy of your local actions will be passed into your `model` as `actions`.  They will also be passed into all of your lifecycle hooks, including render.  Any local actions emitted on the key of your component will be processed by your `reducer` to produce a new local state.
 
 ### Refs
 
@@ -114,8 +114,6 @@ export default {
   }
 }
 ```
-
-
 
 ## License
 

@@ -2,8 +2,10 @@
  * Imports
  */
 
-import {actions} from 'virtex'
 import {createEphemeral, updateEphemeral, destroyEphemeral} from 'redux-ephemeral'
+import objectEqual from 'object-equal'
+import arrayEqual from 'array-equal'
+import {actions} from 'virtex'
 import getProp from 'get-prop'
 import omap from 'omap'
 
@@ -24,7 +26,7 @@ function local (api) {
         create(api, action.thunk)
         break
       case UPDATE_THUNK:
-        update(api, action.thunk, action.prev)
+        update(api, action.thunk)
         break
       case DESTROY_THUNK:
         destroy(api, action.thunk)
@@ -36,51 +38,45 @@ function local (api) {
 }
 
 function create ({dispatch}, thunk) {
-  const {component, props} = thunk
+  const {component, model} = thunk
+
+  // Components get link functions even if they don't themselves
+  // have local state
+  model.link = link(model.refs = {})
 
   // If a component does not have a reducer, it does not
   // get any local state
   if (!component.reducer) return
 
+  component.shouldUpdate = component.shouldUpdate || shouldUpdate
+
   const {initialState = defaultState, reducer} = component
-  const state = initialState(props)
-  const key = stateKey(thunk)
+  const key = stateKey(model)
 
-  dispatch(createEphemeral(key, reducer, state))
-  props.state = state
-  component.actions = component.actions || {}
+  model.state = initialState(model.props)
+  dispatch(createEphemeral(key, reducer, model.state))
 
-  props.link = link(props.refs = {})
-  props.actions = curryActions(component.actions, key)
+  if (component.actions) {
+    model.actions = curryActions(component.actions, key)
+  }
 
-  if (props.ref) {
-    props.ref(props.actions)
+  if (model.props.ref) {
+    model.props.ref(model.actions)
   }
 }
 
-function update ({getState}, thunk, prev) {
-  const {props, component} = thunk
-
-  // If a component does not have a reducer, it does not
-  // get any local state
-  if (!component.reducer) return
-
-  props.state = getProp(getState(), stateKey(thunk))
-  props.actions = prev.props.actions
-  props.refs = prev.props.refs
-  props.ref = prev.props.ref
-  props.link = prev.props.link
+function update ({getState}, thunk) {
+  const {model} = thunk
+  model.state = getProp(getState(), stateKey(model))
 }
 
 function destroy ({getState, dispatch}, thunk) {
-  const {props, component} = thunk
+  const {model, component} = thunk
 
-  // If a component does not have a reducer, it does not
-  // get any local state
   if (!component.reducer) return
 
-  const key = stateKey(thunk)
-  props.state = getProp(getState(), key)
+  const key = stateKey(model)
+  model.state = getProp(getState(), key)
   dispatch(destroyEphemeral(key))
 }
 
@@ -88,14 +84,18 @@ function defaultState () {
   return {}
 }
 
-function stateKey (thunk) {
-  const {props, path} = thunk
+function stateKey (model) {
+  const {path, key} = model
 
-  if (props.key !== undefined) {
+  if (key !== undefined) {
     return path.slice(0, path.lastIndexOf('.') + 1)
   }
 
   return path
+}
+
+function shouldUpdate (prev, next) {
+  return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
 }
 
 function curryActions (actions, key) {
