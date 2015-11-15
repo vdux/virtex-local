@@ -26,7 +26,7 @@ const SET_TEXT = 'SET_TEXT'
 
 function render ({actions, state}) {
   return (
-    <input type='text' onChange={setText} />
+    <input type='text' onChange={actions.setText} />
     <span>
       The text in your input is {state.text}
     </span>
