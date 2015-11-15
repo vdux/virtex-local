@@ -14,7 +14,7 @@ node_modules: package.json
 	@touch node_modules
 
 test: node_modules
-	${BIN}/babel-node test/*.js
+	babel test/*.js
 
 validate: node_modules
 	@${BIN}/standard
