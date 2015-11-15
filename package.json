@@ -1,5 +1,5 @@
 {
-  "name": "@ashaffer/virtex-local",
+  "name": "virtex-local",
   "description": "A local state middleware for virtex components",
   "repository": "git://github.com/ashaffer/virtex-local.git",
   "version": "0.1.0",
@@ -10,10 +10,11 @@
     "postpublish": "make clean"
   },
   "dependencies": {
-    "get-prop": "github:micro-js/get-prop"
+    "get-prop": "github:micro-js/get-prop",
+    "omap": "github:micro-js/omap",
+    "redux-ephemeral": "^0.1.3"
   },
   "devDependencies": {
-    "babel-cli": "^6.0.15",
     "babel-preset-es2015": "^6.1.2",
     "standard": "^5.1.0",
     "tape": "^4.2.0"

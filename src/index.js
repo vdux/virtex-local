@@ -5,6 +5,7 @@
 import {actions} from 'virtex'
 import {createEphemeral, updateEphemeral, destroyEphemeral} from 'redux-ephemeral'
 import getProp from 'get-prop'
+import omap from 'omap'
 
 /**
  * Constants
@@ -23,7 +24,7 @@ function local (api) {
         create(api, action.thunk)
         break
       case UPDATE_THUNK:
-        update(api, action.thunk)
+        update(api, action.thunk, action.prev)
         break
       case DESTROY_THUNK:
         destroy(api, action.thunk)
@@ -43,12 +44,21 @@ function create ({dispatch}, thunk) {
 
   const {initialState = defaultState, reducer} = component
   const state = initialState(props)
+  const key = stateKey(thunk)
 
-  dispatch(createEphemeral(stateKey(thunk), reducer, state))
+  dispatch(createEphemeral(key, reducer, state))
   props.state = state
+  component.actions = component.actions || {}
+
+  props.link = link(props.refs = {})
+  props.actions = curryActions(component.actions, key)
+
+  if (props.ref) {
+    props.ref(props.actions)
+  }
 }
 
-function update ({getState}, thunk) {
+function update ({getState}, thunk, prev) {
   const {props, component} = thunk
 
   // If a component does not have a reducer, it does not
@@ -56,6 +66,10 @@ function update ({getState}, thunk) {
   if (!component.reducer) return
 
   props.state = getProp(getState(), stateKey(thunk))
+  props.actions = prev.props.actions
+  props.refs = prev.props.refs
+  props.ref = prev.props.ref
+  props.link = prev.props.link
 }
 
 function destroy ({getState, dispatch}, thunk) {
@@ -84,8 +98,27 @@ function stateKey (thunk) {
   return path
 }
 
+function curryActions (actions, key) {
+  return omap(actions, fn => (payload, meta) => fn(key, payload, meta))
+}
+
+function localAction (type) {
+  return (key, payload, meta) => updateEphemeral(key, {
+    type,
+    payload,
+    meta
+  })
+}
+
+function link (refs) {
+  return name => actions => refs[name] = actions
+}
+
 /**
  * Exports
  */
 
 export default local
+export {
+  localAction
+}

@@ -23,7 +23,7 @@ clean:
 	@rm -rf lib
 
 build: clean
-	@${BIN}/babel src --out-dir lib
+	babel src --out-dir lib
 
 all: validate test
 

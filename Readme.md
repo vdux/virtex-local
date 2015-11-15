@@ -7,7 +7,7 @@ A local state middleware for virtex components
 
 ## Installation
 
-    $ npm install @ashaffer/virtex-local
+    $ npm install virtex-local
 
 ## License
 
