@@ -110,7 +110,7 @@ export default {
   reducer,
   actions: {
     setText: localAction(SET_TEXT),
-    clear: localActions(CLEAR_TEXT)
+    clear: localAction(CLEAR_TEXT)
   }
 }
 ```

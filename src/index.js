@@ -23,13 +23,13 @@ function local (api) {
   return next => action => {
     switch (action.type) {
       case CREATE_THUNK:
-        create(api, action.thunk)
+        create(api, action.vnode)
         break
       case UPDATE_THUNK:
-        update(api, action.thunk)
+        update(api, action.vnode)
         break
       case DESTROY_THUNK:
-        destroy(api, action.thunk)
+        destroy(api, action.vnode)
         break
     }
 
@@ -38,11 +38,14 @@ function local (api) {
 }
 
 function create ({dispatch}, thunk) {
-  const {component, model} = thunk
+  const {type: component} = thunk
+  const refs = {}
 
-  // Components get link functions even if they don't themselves
+  const model = createModel(thunk)
+
+  // Components get ref functions even if they don't themselves
   // have local state
-  model.link = link(model.refs = {})
+  model.ref = ref(refs)
 
   // If a component does not have a reducer, it does not
   // get any local state
@@ -57,7 +60,7 @@ function create ({dispatch}, thunk) {
   dispatch(createEphemeral(key, reducer, model.state))
 
   if (component.actions) {
-    model.actions = curryActions(component.actions, key)
+    model.actions = curryActions(component.actions, model, refs, key)
   }
 
   if (model.props.ref) {
@@ -66,12 +69,12 @@ function create ({dispatch}, thunk) {
 }
 
 function update ({getState}, thunk) {
-  const {model} = thunk
+  const model = createModel(thunk)
   model.state = getProp(getState(), stateKey(model))
 }
 
 function destroy ({getState, dispatch}, thunk) {
-  const {model, component} = thunk
+  const {model, type: component} = thunk
 
   if (!component.reducer) return
 
@@ -98,20 +101,31 @@ function shouldUpdate (prev, next) {
   return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
 }
 
-function curryActions (actions, key) {
-  return omap(actions, fn => (payload, meta) => fn(key, payload, meta))
+function curryActions (actions, model, refs, key) {
+  return omap(actions, fn => (...args) => fn({model, refs, key}, ...args))
 }
 
 function localAction (type) {
-  return (key, payload, meta) => updateEphemeral(key, {
+  return ({key}, payload, meta) => updateEphemeral(key, {
     type,
     payload,
     meta
   })
 }
 
-function link (refs) {
+function ref (refs) {
   return name => actions => refs[name] = actions
+}
+
+function createModel (thunk) {
+  const model = thunk.model = thunk.model || {}
+
+  model.path = thunk.path
+  model.key = thunk.key
+  model.props = thunk.attrs || {}
+  model.children = thunk.children
+
+  return model
 }
 
 /**
