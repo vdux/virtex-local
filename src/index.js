@@ -26,7 +26,7 @@ function local (api) {
         create(api, action.vnode)
         break
       case UPDATE_THUNK:
-        update(api, action.vnode)
+        update(api, action.vnode, action.prev)
         break
       case DESTROY_THUNK:
         destroy(api, action.vnode)
@@ -38,75 +38,58 @@ function local (api) {
 }
 
 function create ({dispatch}, thunk) {
-  const {type: component} = thunk
-  const refs = {}
+  const component = thunk.type
 
-  const model = createModel(thunk)
-
-  // Components get ref functions even if they don't themselves
-  // have local state
-  model.ref = ref(refs)
+  prepare(thunk)
 
   // If a component does not have a reducer, it does not
   // get any local state
-  if (!component.reducer) return
+  if (component.reducer) {
+    component.shouldUpdate = component.shouldUpdate || shouldUpdate
+    dispatch(createEphemeral(stateKey(thunk), component.reducer, thunk.state))
 
-  component.shouldUpdate = component.shouldUpdate || shouldUpdate
-
-  const {initialState = defaultState, reducer} = component
-  const key = stateKey(model)
-
-  model.state = initialState(model.props)
-  dispatch(createEphemeral(key, reducer, model.state))
-
-  if (component.actions) {
-    model.actions = curryActions(component.actions, model, refs, key)
-  }
-
-  if (model.props.ref) {
-    model.props.ref(model.actions)
+    if (thunk.props.ref) {
+      thunk.props.ref(thunk.actions)
+    }
   }
 }
 
-function update ({getState}, thunk) {
-  const model = createModel(thunk)
-  model.state = getProp(getState(), stateKey(model))
+function update ({getState}, thunk, prev) {
+  thunk.refs = prev.refs
+  prepare(thunk, getState)
 }
 
 function destroy ({getState, dispatch}, thunk) {
-  const {model, type: component} = thunk
-
-  if (!component.reducer) return
-
-  const key = stateKey(model)
-  model.state = getProp(getState(), key)
-  dispatch(destroyEphemeral(key))
+  prepare(thunk, getState)
+  component.reducer && dispatch(destroyEphemeral(stateKey(thunk)))
 }
 
 function defaultState () {
   return {}
 }
 
-function stateKey (model) {
-  const {path, key} = model
+function stateKey (thunk) {
+  const {path, key} = thunk
 
-  if (key !== undefined) {
-    return path.slice(0, path.lastIndexOf('.') + 1)
-  }
-
-  return path
+  return key === undefined
+    ? path
+    : path.slice(0, path.lastIndexOf('.') + 1) + '.' + key
 }
 
 function shouldUpdate (prev, next) {
   return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
 }
 
-function curryActions (actions, model, refs, key) {
-  return omap(actions, fn => (...args) => fn({model, refs, key}, ...args))
+function curryActions (thunk) {
+  const component = thunk.type
+
+  if (component.actions) {
+    thunk.actions = omap(component.actions, fn => (...args) => fn(thunk, ...args))
+  }
 }
 
 function localAction (type) {
-  return ({key}, payload, meta) => updateEphemeral(key, {
+  return (thunk, payload, meta) => updateEphemeral(stateKey(thunk), {
     type,
     payload,
     meta
@@ -117,15 +100,12 @@ function ref (refs) {
   return name => actions => refs[name] = actions
 }
 
-function createModel (thunk) {
-  const model = thunk.model = thunk.model || {}
-
-  model.path = thunk.path
-  model.key = thunk.key
-  model.props = thunk.attrs || {}
-  model.children = thunk.children
-
-  return model
+function prepare (thunk, getState) {
+  if (!thunk.ref) thunk.ref = ref(thunk.refs = thunk.refs || {})
+  curryActions(thunk)
+  thunk.state = getState
+    ? getProp(getState(), stateKey(thunk))
+    : (thunk.type.initialState || defaultState)(thunk.props)
 }
 
 /**
