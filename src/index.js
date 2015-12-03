@@ -3,6 +3,7 @@
  */
 
 import {createEphemeral, updateEphemeral, destroyEphemeral} from 'redux-ephemeral'
+import identity from '@micro-js/identity'
 import objectEqual from 'object-equal'
 import arrayEqual from 'array-equal'
 import {actions} from 'virtex'
@@ -39,8 +40,9 @@ function local (api) {
 
 function create ({dispatch}, thunk) {
   const component = thunk.type
+  const {initialState = defaultState} = component
 
-  prepare(thunk)
+  prepare(thunk, initialState(thunk.props))
 
   // If a component does not have a reducer, it does not
   // get any local state
@@ -55,12 +57,15 @@ function create ({dispatch}, thunk) {
 }
 
 function update ({getState}, thunk, prev) {
-  thunk.refs = prev.refs
-  prepare(thunk, getState)
+  prepare(thunk, getProp(getState(), stateKey(thunk)))
+
+  if (thunk.props.ref) {
+    thunk.props.ref(thunk.actions)
+  }
 }
 
-function destroy ({getState, dispatch}, thunk) {
-  prepare(thunk, getState)
+function destroy ({dispatch}, thunk) {
+  const component = thunk.type
   component.reducer && dispatch(destroyEphemeral(stateKey(thunk)))
 }
 
@@ -80,32 +85,23 @@ function shouldUpdate (prev, next) {
   return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
 }
 
-function curryActions (thunk) {
-  const component = thunk.type
-
-  if (component.actions) {
-    thunk.actions = omap(component.actions, fn => (...args) => fn(thunk, ...args))
-  }
-}
-
-function localAction (type) {
-  return (thunk, payload, meta) => updateEphemeral(stateKey(thunk), {
-    type,
-    payload,
-    meta
-  })
+function localAction (type, fn = identity) {
+  return (...args) => updateEphemeral(stateKey(args[0]), {type, payload: fn(...args)})
 }
 
 function ref (refs) {
-  return name => actions => refs[name] = actions
+  return name => send => refs[name] = send
 }
 
-function prepare (thunk, getState) {
-  if (!thunk.ref) thunk.ref = ref(thunk.refs = thunk.refs || {})
-  curryActions(thunk)
-  thunk.state = getState
-    ? getProp(getState(), stateKey(thunk))
-    : (thunk.type.initialState || defaultState)(thunk.props)
+function prepare (thunk, state) {
+  thunk.state = state
+  thunk.actions = curryActions(thunk)
+  thunk.refs = thunk.refs || {}
+  thunk.ref = ref(thunk.refs)
+}
+
+function curryActions (thunk) {
+  return omap(thunk.type.actions, fn => (...args) => fn(thunk, ...args))
 }
 
 /**
