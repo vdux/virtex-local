@@ -40,7 +40,7 @@ function local (api) {
 
 function create ({dispatch}, thunk) {
   const component = thunk.type
-  const {initialState = defaultState} = component
+  const {initialState = () => ({})} = component
 
   prepare(thunk, initialState(thunk.props))
 
@@ -48,45 +48,20 @@ function create ({dispatch}, thunk) {
   // get any local state
   if (component.reducer) {
     component.shouldUpdate = component.shouldUpdate || shouldUpdate
-    dispatch(createEphemeral(stateKey(thunk), component.reducer, thunk.state))
-
-    if (thunk.props.ref) {
-      thunk.props.ref(thunk.actions)
-    }
+    dispatch(createEphemeral(thunk.path, component.reducer, thunk.state))
   }
 }
 
 function update ({getState}, thunk, prev) {
-  prepare(thunk, getProp(getState(), stateKey(thunk)))
-
-  if (thunk.props.ref) {
-    thunk.props.ref(thunk.actions)
-  }
+  prepare(thunk, getProp(getState(), thunk.path))
 }
 
 function destroy ({dispatch}, thunk) {
-  const component = thunk.type
-  component.reducer && dispatch(destroyEphemeral(stateKey(thunk)))
-}
-
-function defaultState () {
-  return {}
-}
-
-function stateKey (thunk) {
-  const {path, key} = thunk
-
-  return key === undefined
-    ? path
-    : path.slice(0, path.lastIndexOf('.') + 1) + '.' + key
+  thunk.type.reducer && dispatch(destroyEphemeral(thunk.path))
 }
 
 function shouldUpdate (prev, next) {
   return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
-}
-
-function localAction (type, fn = identity) {
-  return (...args) => updateEphemeral(stateKey(args[0]), {type, payload: fn(...args)})
 }
 
 function ref (refs) {
@@ -95,13 +70,13 @@ function ref (refs) {
 
 function prepare (thunk, state) {
   thunk.state = state
-  thunk.actions = curryActions(thunk)
+  thunk.local = fn => (...args) => updateEphemeral(thunk.path, fn(...args))
   thunk.refs = thunk.refs || {}
   thunk.ref = ref(thunk.refs)
-}
 
-function curryActions (thunk) {
-  return omap(thunk.type.actions, fn => (...args) => fn(thunk, ...args))
+  if (thunk.props.ref) {
+    thunk.props.ref(thunk.local)
+  }
 }
 
 /**
@@ -109,6 +84,3 @@ function curryActions (thunk) {
  */
 
 export default local
-export {
-  localAction
-}
