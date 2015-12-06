@@ -38,11 +38,13 @@ function local (api) {
 
 function create ({dispatch}, thunk) {
   const component = thunk.type
+  const {initialState = () => ({})} = component
+
+  prepare(thunk, initialState(thunk.props))
+
   // If a component does not have a reducer, it does not
   // get any local state
   if (component.reducer) {
-    const {initialState = () => ({})} = component
-    prepare(thunk, initialState(thunk.props))
     component.shouldUpdate = component.shouldUpdate || shouldUpdate
     dispatch(createEphemeral(thunk.path, component.reducer, thunk.state))
   }
@@ -60,9 +62,24 @@ function shouldUpdate (prev, next) {
   return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || !objectEqual(prev.state, next.state)
 }
 
+function ref (refs) {
+  return name => local => refs[name] = local
+}
+
 function prepare (thunk, state) {
   thunk.state = state
-  thunk.local = fn => (...args) => updateEphemeral(thunk.path, fn(...args))
+  thunk.local = fn => (...args) => updateEphemeral(thunk.path, fn(thunk, ...args))
+
+  const refs = {}
+
+  thunk.ref = {
+    as: ref(refs),
+    to: (name, fn, ...outerArgs) => (...innerArgs) => refs[name](fn, ...outerArgs)(...innerArgs)
+  }
+
+  if (thunk.props.ref) {
+    thunk.props.ref(thunk.local)
+  }
 }
 
 /**
