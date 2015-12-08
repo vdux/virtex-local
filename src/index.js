@@ -72,7 +72,7 @@ function ref (refs) {
 
 function prepare (thunk, state) {
   thunk.state = state
-  thunk.local = fn => (...args) => updateEphemeral(thunk.path, thunk.type.reducer(thunk.state, fn.apply(thunk, args)))
+  thunk.local = (fn, ...outerArgs) => (...innerArgs) => updateEphemeral(thunk.path, thunk.type.reducer(thunk.state, fn.apply(thunk, outerArgs.concat(innerArgs))))
 
   const refs = {}
 
