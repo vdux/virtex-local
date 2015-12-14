@@ -13,24 +13,51 @@ A local state middleware for [virtex](https://github.com/ashaffer/virtex) [compo
 
 First, you need to install it in your redux middleware stack *before* [virtex-component](https://github.com/ashaffer/virtex-component).  E.g.
 
-`applyMiddleware(local, component, ...others)`
+`applyMiddleware(local('app'), component, dom(document), ...others)`
+
+The `'app'` string passed to virtex-local tells it where in your global state atom your component state tree will be mounted. In this case, `state.app` is where it will live. In order for this to work, you will also need to mount [redux-ephemeral](https://github.com/ashaffer/redux-ephemeral) into your reducer at the same key, like this:
+
+```javascript
+import combineReducers from '@micro-js/combine-reducers'
+import ephemeral from 'redux-ephemeral'
+
+export default combineReducers({
+  // ...other reducers,
+  app: ephemeral
+})
+```
 
 ### Local state
 
-If you want your component to have local state, you need to export a reducer and some actions.  You can do that like this:
+When using virtex-local, your components will receive three extra things in their model:
+
+ * `local` - Wraps actions that you want to direct to your local reducer.
+ * `state` - Your components local state.
+ * `ref` - Allows you to dispatch actions to other components, see below for more details.
+
+### Example (without refs)
 
 ```javascript
-import {localAction} from 'virtex-local'
+import element from 'virtex-element'
 
-const SET_TEXT = 'SET_TEXT'
-
-function render ({actions, state}) {
+function render ({local, state}) {
   return (
-    <input type='text' onChange={actions.setText} />
+    <input type='text' onChange={local(setText)} />
     <span>
       The text in your input is {state.text}
     </span>
   )
+}
+
+const SET_TEXT = 'SET_TEXT'
+
+function setText (e) {
+  const text = e.currentTarget.value
+
+  return {
+    type: SET_TEXT,
+    payload: text
+  }
 }
 
 function reducer (state, action) {
@@ -47,58 +74,63 @@ function reducer (state, action) {
 
 export default {
   render,
-  reducer,
-  actions: {
-    setText: localAction(SET_TEXT)
-  }
+  reducer
 }
 ```
 
-A curried copy of your local actions will be passed into your `model` as `actions`.  They will also be passed into all of your lifecycle hooks, including render.  Any local actions emitted on the key of your component will be processed by your `reducer` to produce a new local state.
-
 ### Refs
+
+Refs allow you to talk to child components. The `ref` property you receive in your model has two functions on it:
+
+  * `as(name)` - Binds a ref to `name`. Put it on a component like this `<Dropdown ref={ref.as('my_dropdown')}`
+  * `to(name, actionCreator)` - Returns a curried function that dispatches the action returned by `actionCreator` to the ref specified by `name`. E.g. `<button onClick={ref.to('my_dropdown', Dropdown.toggle)} />`
+
+### Example (with refs)
 
 Sometimes you want to be able to tell your child component's to do something.  You can call any of your children's actions by referencing them like this:
 
 ```javascript
-function render ({link, refs}) {
+import Dropdown from 'components/dropdown'
+
+function render ({ref}) {
   const {input} = refs
 
   return (
-    <TextInput ref={link('input')} />
-    <button onClick={() => input.clear()}>Clear Input</button>
+    <Dropdown ref={ref.as('dropdown')}>
+      <div>Thing 1</div>
+      <div>Thing 2</div>
+    </Dropdown>
+    <button onClick={ref.to('dropdown', Dropdown.toggle)}>Toggle Dropdown</button>
   )
 }
 ```
 
-Where `TextInput` has:
+Where `Dropdown` has:
 
 ```javascript
-import {localAction} from 'virtex-local'
 
-const SET_TEXT = 'SET_TEXT'
-const CLEAR_TEXT = 'CLEAR_TEXT'
-
-function render ({actions, state}) {
+function render ({state, children}) {
   return (
-    <input type='text' onChange={setText} />
-    <span>
-      The text in your input is {state.text}
-    </span>
+    <div class={{show: state.open}}>
+      {children}
+    </div>
   )
+}
+
+const TOGGLE = 'TOGGLE_DROPDOWN'
+
+function toggle () {
+  return {
+    type: TOGGLE
+  }
 }
 
 function reducer (state, action) {
   switch (action.type) {
-    case CLEAR_TEXT:
+    case TOGGLE:
       return {
-        ...state,
-        text: ''
-      }
-    case SET_TEXT:
-      return {
-        ...state,
-        text: action.payload
+        ...state
+        open: !state.open
       }
   }
 
@@ -108,10 +140,7 @@ function reducer (state, action) {
 export default {
   render,
   reducer,
-  actions: {
-    setText: localAction(SET_TEXT),
-    clear: localAction(CLEAR_TEXT)
-  }
+  toggle
 }
 ```
 
