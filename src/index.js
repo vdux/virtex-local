@@ -3,9 +3,9 @@
  */
 
 import {updateEphemeral, destroyEphemeral} from 'redux-ephemeral'
-import objectEqual from '@micro-js/object-equal'
-import arrayEqual from '@micro-js/array-equal'
-import getProp from '@micro-js/get-prop'
+import objectEqual from '@f/object-equal'
+import arrayEqual from '@f/array-equal'
+import getProp from '@f/get-prop'
 import {actions} from 'virtex'
 
 /**
