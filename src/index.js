@@ -81,7 +81,7 @@ function prepare (thunk, state) {
     to: (name, fn, ...outerArgs) => (...innerArgs) => refs[name](fn, ...outerArgs)(...innerArgs)
   }
 
-  if (thunk.props.ref) {
+  if (thunk.props && thunk.props.ref) {
     thunk.props.ref(thunk.local)
   }
 }
