@@ -13,7 +13,7 @@
     "@f/array-equal": "^1.1.1",
     "@f/get-prop": "^1.1.1",
     "@f/object-equal": "^1.1.1",
-    "redux-ephemeral": "^0.1.8"
+    "redux-ephemeral": "^0.2.0"
   },
   "devDependencies": {
     "babel-preset-es2015": "^6.1.2",
