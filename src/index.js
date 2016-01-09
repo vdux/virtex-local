@@ -2,7 +2,7 @@
  * Imports
  */
 
-import {updateEphemeral, destroyEphemeral} from 'redux-ephemeral'
+import {createEphemeral, toEphemeral, destroyEphemeral} from 'redux-ephemeral'
 import objectEqual from '@f/object-equal'
 import arrayEqual from '@f/array-equal'
 import getProp from '@f/get-prop'
@@ -50,7 +50,7 @@ function create (dispatch, thunk) {
   // get any local state
   if (component.reducer) {
     component.shouldUpdate = component.shouldUpdate || shouldUpdate
-    dispatch(updateEphemeral(thunk.path, thunk.state))
+    dispatch(createEphemeral(thunk.path, thunk.state))
   }
 }
 
@@ -72,7 +72,7 @@ function ref (refs) {
 
 function prepare (thunk, state) {
   thunk.state = state
-  thunk.local = (fn, ...outerArgs) => (...innerArgs) => updateEphemeral(thunk.path, thunk.type.reducer(thunk.state, fn.apply(thunk, outerArgs.concat(innerArgs))))
+  thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
 
   const refs = {}
 
@@ -81,7 +81,7 @@ function prepare (thunk, state) {
     to: (name, fn, ...outerArgs) => (...innerArgs) => refs[name](fn, ...outerArgs)(...innerArgs)
   }
 
-  if (thunk.props.ref) {
+  if (thunk.props && thunk.props.ref) {
     thunk.props.ref(thunk.local)
   }
 }
