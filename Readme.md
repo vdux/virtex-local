@@ -18,7 +18,7 @@ First, you need to install it in your redux middleware stack *before* [virtex-co
 The `'app'` string passed to virtex-local tells it where in your global state atom your component state tree will be mounted. In this case, `state.app` is where it will live. In order for this to work, you will also need to mount [redux-ephemeral](https://github.com/ashaffer/redux-ephemeral) into your reducer at the same key, like this:
 
 ```javascript
-import combineReducers from '@micro-js/combine-reducers'
+import combineReducers from '@f/combine-reducers'
 import ephemeral from 'redux-ephemeral'
 
 export default combineReducers({
