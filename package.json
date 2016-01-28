@@ -2,7 +2,7 @@
   "name": "virtex-local",
   "description": "A local state middleware for virtex components",
   "repository": "git://github.com/ashaffer/virtex-local.git",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "license": "MIT",
   "main": "lib/index.js",
   "scripts": {
