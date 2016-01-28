@@ -18,7 +18,7 @@ const {CREATE_THUNK, UPDATE_THUNK, DESTROY_THUNK} = actions.types
  * Provide local state to virtex components
  */
 
-function local (prop, dirty) {
+function local (prop, dirty = {}) {
   return ({getState, dispatch}) => {
     const state = () => getProp(prop, getState())
 
