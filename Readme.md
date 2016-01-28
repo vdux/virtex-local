@@ -18,13 +18,9 @@ First, you need to install it in your redux middleware stack *before* [virtex-co
 The `'app'` string passed to virtex-local tells it where in your global state atom your component state tree will be mounted. In this case, `state.app` is where it will live. In order for this to work, you will also need to mount [redux-ephemeral](https://github.com/ashaffer/redux-ephemeral) into your reducer at the same key, like this:
 
 ```javascript
-import combineReducers from '@f/combine-reducers'
 import ephemeral from 'redux-ephemeral'
 
-export default combineReducers({
-  // ...other reducers,
-  app: ephemeral
-})
+export default ephemeral('app', reducer)
 ```
 
 ### Local state
@@ -141,6 +137,19 @@ export default {
   render,
   reducer,
   toggle
+}
+```
+
+## Dirty map
+
+There is a second argument you may pass to the virtex-local middleware when you install it, `dirty`. If you pass this argument, virtex-local will maintain a map of the dirty state of your components. This can be useful for implementing partial subtree re-rendering optimizations. E.g.
+
+```javascript
+const dirty = {}
+applyMiddleware(local('app', dirty), ...)
+
+function update (state) {
+  Object.keys(dirty).forEach(key => rerenderSubtree(key)))
 }
 ```
 

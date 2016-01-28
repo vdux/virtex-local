@@ -2,7 +2,7 @@
  * Imports
  */
 
-import {createEphemeral, toEphemeral, destroyEphemeral} from 'redux-ephemeral'
+import {createEphemeral, toEphemeral, destroyEphemeral, isEphemeral, lookup} from 'redux-ephemeral'
 import objectEqual from '@f/object-equal'
 import arrayEqual from '@f/array-equal'
 import getProp from '@f/get-prop'
@@ -18,21 +18,28 @@ const {CREATE_THUNK, UPDATE_THUNK, DESTROY_THUNK} = actions.types
  * Provide local state to virtex components
  */
 
-function local (prop = '') {
+function local (prop, dirty) {
   return ({getState, dispatch}) => {
     const state = () => getProp(prop, getState())
 
     return next => action => {
       switch (action.type) {
         case CREATE_THUNK:
+          delete dirty[action.vnode.path]
           create(dispatch, action.vnode)
           break
         case UPDATE_THUNK:
+          delete dirty[action.vnode.path]
           update(state, action.vnode, action.prev)
           break
         case DESTROY_THUNK:
+          delete dirty[action.vnode.path]
           destroy(dispatch, action.vnode)
           break
+      }
+
+      if (isEphemeral(action)) {
+        dirty[action.meta.ephemeral.key] = true
       }
 
       return next(action)
@@ -55,7 +62,7 @@ function create (dispatch, thunk) {
 }
 
 function update (getState, thunk, prev) {
-  prepare(thunk, getProp(thunk.path, getState()))
+  prepare(thunk, lookup(getState(), thunk.path))
 }
 
 function destroy (dispatch, thunk) {
@@ -63,7 +70,7 @@ function destroy (dispatch, thunk) {
 }
 
 function shouldUpdate (prev, next) {
-  return !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props) || prev.state !== next.state
+  return prev.state !== next.state || !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props)
 }
 
 function ref (refs) {
