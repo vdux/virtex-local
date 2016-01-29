@@ -98,4 +98,6 @@ function prepare (thunk, state) {
  */
 
 export default local
-export ephemeral as mount
+export {
+  ephemeral as mount
+}
