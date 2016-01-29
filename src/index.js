@@ -2,7 +2,7 @@
  * Imports
  */
 
-import {createEphemeral, toEphemeral, destroyEphemeral, isEphemeral, lookup} from 'redux-ephemeral'
+import ephemeral, {createEphemeral, toEphemeral, destroyEphemeral, isEphemeral, lookup} from 'redux-ephemeral'
 import objectEqual from '@f/object-equal'
 import arrayEqual from '@f/array-equal'
 import getProp from '@f/get-prop'
@@ -98,3 +98,4 @@ function prepare (thunk, state) {
  */
 
 export default local
+export ephemeral as mount
