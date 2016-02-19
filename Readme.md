@@ -29,9 +29,8 @@ When using virtex-local, your components will receive three extra things in thei
 
  * `local` - Wraps actions that you want to direct to your local reducer.
  * `state` - Your components local state.
- * `ref` - Allows you to dispatch actions to other components, see below for more details.
 
-### Example (without refs)
+### Example
 
 ```javascript
 import element from 'virtex-element'
@@ -71,72 +70,6 @@ function reducer (state, action) {
 export default {
   render,
   reducer
-}
-```
-
-### Refs
-
-Refs allow you to talk to child components. The `ref` property you receive in your model has two functions on it:
-
-  * `as(name)` - Binds a ref to `name`. Put it on a component like this `<Dropdown ref={ref.as('my_dropdown')}`
-  * `to(name, actionCreator)` - Returns a curried function that dispatches the action returned by `actionCreator` to the ref specified by `name`. E.g. `<button onClick={ref.to('my_dropdown', Dropdown.toggle)} />`
-
-### Example (with refs)
-
-Sometimes you want to be able to tell your child component's to do something.  You can call any of your children's actions by referencing them like this:
-
-```javascript
-import Dropdown from 'components/dropdown'
-
-function render ({ref}) {
-  const {input} = refs
-
-  return (
-    <Dropdown ref={ref.as('dropdown')}>
-      <div>Thing 1</div>
-      <div>Thing 2</div>
-    </Dropdown>
-    <button onClick={ref.to('dropdown', Dropdown.toggle)}>Toggle Dropdown</button>
-  )
-}
-```
-
-Where `Dropdown` has:
-
-```javascript
-
-function render ({state, children}) {
-  return (
-    <div class={{show: state.open}}>
-      {children}
-    </div>
-  )
-}
-
-const TOGGLE = 'TOGGLE_DROPDOWN'
-
-function toggle () {
-  return {
-    type: TOGGLE
-  }
-}
-
-function reducer (state, action) {
-  switch (action.type) {
-    case TOGGLE:
-      return {
-        ...state
-        open: !state.open
-      }
-  }
-
-  return state
-}
-
-export default {
-  render,
-  reducer,
-  toggle
 }
 ```
 

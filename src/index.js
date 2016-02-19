@@ -73,24 +73,9 @@ function shouldUpdate (prev, next) {
   return prev.state !== next.state || !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props)
 }
 
-function ref (refs) {
-  return name => local => refs[name] = local
-}
-
 function prepare (thunk, state) {
   thunk.state = state
   thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
-
-  const refs = {}
-
-  thunk.ref = {
-    as: ref(refs),
-    to: (name, fn, ...outerArgs) => (...innerArgs) => refs[name](fn, ...outerArgs)(...innerArgs)
-  }
-
-  if (thunk.props && thunk.props.ref) {
-    thunk.props.ref(thunk.local)
-  }
 }
 
 /**
