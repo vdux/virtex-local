@@ -29,7 +29,13 @@ function local (prop, dirty = {}) {
           create(dispatch, action.vnode)
           break
         case UPDATE_THUNK:
-          delete dirty[action.vnode.path]
+          const path = action.vnode.path
+
+          if (dirty[path]) {
+            action.vnode.vnode = null
+            delete dirty[action.vnode.path]
+          }
+
           update(state, action.vnode, action.prev)
           break
         case DESTROY_THUNK:
