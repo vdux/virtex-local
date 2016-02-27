@@ -29,10 +29,10 @@ function local (prop, dirty = {}) {
           create(dispatch, action.vnode)
           break
         case UPDATE_THUNK:
-          const path = action.vnode.path
-
-          if (dirty[path]) {
-            action.vnode.vnode = null
+          // Prevent the clearing of dirtiness
+          // if we're just rendering a cached
+          // node
+          if (!action.vnode.vnode) {
             delete dirty[action.vnode.path]
           }
 
