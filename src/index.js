@@ -51,7 +51,7 @@ function create (dispatch, thunk) {
   const component = thunk.type
   const {initialState = () => ({})} = component
 
-  prepare(thunk, initialState(thunk.props))
+  prepare(thunk, initialState(thunk))
 
   // If a component does not have a reducer, it does not
   // get any local state
