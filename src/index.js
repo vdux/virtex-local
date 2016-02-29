@@ -57,7 +57,7 @@ function create (dispatch, thunk) {
   const component = thunk.type
   const {initialState = () => ({})} = component
 
-  prepare(thunk, initialState(thunk))
+  prepare(thunk, initialState)
 
   // If a component does not have a reducer, it does not
   // get any local state
@@ -79,9 +79,9 @@ function shouldUpdate (prev, next) {
   return prev.state !== next.state || !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props)
 }
 
-function prepare (thunk, state) {
-  thunk.state = state
+function prepare (thunk, initialState) {
   thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
+  thunk.state = initialState(thunk)
 }
 
 /**
