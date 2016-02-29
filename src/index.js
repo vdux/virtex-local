@@ -79,9 +79,11 @@ function shouldUpdate (prev, next) {
   return prev.state !== next.state || !arrayEqual(prev.children, next.children) || !objectEqual(prev.props, next.props)
 }
 
-function prepare (thunk, initialState) {
+function prepare (thunk, state) {
   thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
-  thunk.state = initialState(thunk)
+  thunk.state = typeof state === 'function'
+    ? state(thunk)
+    : state
 }
 
 /**
