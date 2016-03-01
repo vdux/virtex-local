@@ -30,13 +30,12 @@ function local (prop, dirty = {}) {
           break
         case UPDATE_THUNK:
           // Prevent the clearing of dirtiness
-          // if we're just rendering a cached
-          // node
+          // / updating of state if we're just
+          // rendering a cached node
           if (!action.vnode.vnode) {
             delete dirty[action.vnode.path]
+            update(state, action.vnode, action.prev)
           }
-
-          update(state, action.vnode, action.prev)
           break
         case DESTROY_THUNK:
           delete dirty[action.vnode.path]
