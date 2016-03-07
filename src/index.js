@@ -61,7 +61,6 @@ function create (dispatch, thunk) {
   // If a component does not have a reducer, it does not
   // get any local state
   if (component.reducer) {
-    component.shouldUpdate = component.shouldUpdate || shouldUpdate
     dispatch(createEphemeral(thunk.path, thunk.state))
   }
 }
@@ -79,6 +78,7 @@ function shouldUpdate (prev, next) {
 }
 
 function prepare (thunk, state) {
+  thunk.type.shouldUpdate = thunk.type.shouldUpdate || shouldUpdate
   thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
   thunk.state = typeof state === 'function'
     ? state(thunk)
