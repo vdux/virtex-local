@@ -79,7 +79,11 @@ function shouldUpdate (prev, next) {
 
 function prepare (thunk, state) {
   thunk.type.shouldUpdate = thunk.type.shouldUpdate || shouldUpdate
-  thunk.local = (fn, ...outerArgs) => (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
+  thunk.local = (fn, ...outerArgs) => {
+    if (typeof fn !== 'function') throw new Error('virtex-local: non-function passed to `local()`. Did you pass the wrong handler?')
+    return (...innerArgs) => toEphemeral(thunk.path, thunk.type.reducer, fn.apply(thunk, outerArgs.concat(innerArgs)))
+  }
+
   thunk.state = typeof state === 'function'
     ? state(thunk)
     : state
