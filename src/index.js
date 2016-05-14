@@ -26,7 +26,7 @@ function local (prop, dirty = {}) {
       switch (action.type) {
         case CREATE_THUNK:
           delete dirty[action.vnode.path]
-          create(dispatch, action.vnode)
+          create(state, dispatch, action.vnode)
           break
         case UPDATE_THUNK:
           // Prevent the clearing of dirtiness
@@ -52,15 +52,16 @@ function local (prop, dirty = {}) {
   }
 }
 
-function create (dispatch, thunk) {
+function create (getState, dispatch, thunk) {
   const component = thunk.type
   const {initialState = () => ({})} = component
 
-  prepare(thunk, initialState)
+  const priorState = lookup(getState(), thunk.path)
+  prepare(thunk, priorState || initialState)
 
   // If a component does not have a reducer, it does not
   // get any local state
-  if (component.reducer) {
+  if (component.reducer && !priorState) {
     dispatch(createEphemeral(thunk.path, thunk.state))
   }
 }
