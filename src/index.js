@@ -44,7 +44,15 @@ function local (prop, dirty = {}) {
       }
 
       if (isEphemeral(action)) {
-        dirty[action.meta.ephemeral.key] = true
+        const prevState = getState()
+        const result = next(action)
+        const nextState = getState()
+
+        if (prevState !== nextState) {
+          dirty[action.meta.ephemeral.key] = true
+        }
+
+        return result
       }
 
       return next(action)
